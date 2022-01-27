@@ -17,8 +17,8 @@ def is_time_between(begin_time, end_time, check_time=None):
     else: # crosses midnight
         return check_time >= begin_time or check_time <= end_time
 
-def move(x, y, screen, logo):
-    screen.blit(logo, (x, y))
+def move(x, y, screen, bouncing_logo):
+    screen.blit(bouncing_logo, (x, y))
 
 def fill(surface, color):
     """Fill all pixels of the surface with color, preserve transparency."""
@@ -41,10 +41,13 @@ def initialize_gui(active, config):
 
     if active == False:
         # Screensaver
-        logo = pygame.image.load('content/' + config['screensaver']['logo'])
-        logo = pygame.transform.scale(logo, (175, 175))
+        bouncing_logo = pygame.image.load('content/' + config['screensaver']['bouncing_logo'])
+        bouncing_logo = pygame.transform.scale(bouncing_logo, (config['screensaver']['bouncing_logo_size'], config['screensaver']['bouncing_logo_size']))
+        static_logo_1 = pygame.image.load('content/' + config['screensaver']['static_logo'])
+        static_logo_1 = pygame.transform.scale(static_logo_1, (config['screensaver']['static_logo_size_x'], config['screensaver']['static_logo_size_y']))
+
         clock = pygame.time.Clock()
-        img_size = logo.get_rect().size
+        img_size = bouncing_logo.get_rect().size
         screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
         pygame.mouse.set_visible(False)
 
@@ -55,21 +58,24 @@ def initialize_gui(active, config):
         x_speed = config['screensaver']['x_speed']
         y_speed = config['screensaver']['y_speed']
         if config['screensaver']['change_color']:
-            fill(logo, pygame.Color(randColor()))
+            fill(bouncing_logo, pygame.Color(randColor()))
 
         while exit == False:
             screen.fill((0, 0, 0))
-            if (x + img_size[0] >= infoObject.current_w * 4) or (x <= 0):
+            screen.blit(static_logo_1, (math.floor(infoObject.current_w / 2) - (math.floor(config['screensaver']['static_logo_size_x'] / 2)), math.floor(infoObject.current_h / 2) - (config['screensaver']['static_logo_size_y'] / 2)))
+            if (x + img_size[0] >= infoObject.current_w * config['screensaver']['num_displays']) or (x <= 0):
                 x_speed = -x_speed
+                x += x_speed
                 if config['screensaver']['change_color']:
-                    fill(logo, pygame.Color(randColor()))
+                    fill(bouncing_logo, pygame.Color(randColor()))
             if (y + img_size[1] >= infoObject.current_h) or (y <= 0):
                 y_speed = -y_speed
+                y += y_speed
                 if config['screensaver']['change_color']:
-                    fill(logo, pygame.Color(randColor()))
+                    fill(bouncing_logo, pygame.Color(randColor()))
             x += x_speed
             y += y_speed
-            move(x, y, screen, logo)
+            move(x, y, screen, bouncing_logo)
             pygame.display.update()
             clock.tick(60)
             for event in pygame.event.get():
@@ -101,7 +107,7 @@ def initialize_gui(active, config):
         # media_player.toggle_fullscreen()
         # media_player.play()
 
-        subprocess.Popen(["cvlc", "--no-audio", "--no-video-title-show", "--no-metadata-network-access", "--no-osd", "--fullscreen", "-Iqt", "--repeat", config['active']['video']])
+        subprocess.Popen(["cvlc", "--no-audio", "--no-video-title-show", "--no-metadata-network-access", "--no-osd", "--fullscreen", "-Iqt", "--repeat", 'content/' + config['active']['video']])
 
         while True:
             # Check if mode should change
